@@ -8,6 +8,7 @@ import (
 	"code.cloudfoundry.org/cli/api/cloudcontroller"
 	"code.cloudfoundry.org/cli/api/cloudcontroller/ccv3/constant"
 	"code.cloudfoundry.org/cli/api/cloudcontroller/ccv3/internal"
+	"github.com/pkg/errors"
 )
 
 // ProcessInstance represents a single process instance for a particular
@@ -44,7 +45,7 @@ func (instance *ProcessInstance) UnmarshalJSON(data []byte) error {
 	var inputInstance struct {
 		Details          string `json:"details"`
 		DiskQuota        uint64 `json:"disk_quota"`
-		Index            int64  `json:"index"`
+		Index            string `json:"index"`
 		IsolationSegment string `json:"isolation_segment"`
 		MemQuota         uint64 `json:"mem_quota"`
 		State            string `json:"state"`
@@ -62,11 +63,16 @@ func (instance *ProcessInstance) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	index, err := toInt(inputInstance.Index)
+	if err != nil {
+		return err
+	}
+
 	instance.CPU = inputInstance.Usage.CPU
 	instance.Details = inputInstance.Details
 	instance.DiskQuota = inputInstance.DiskQuota
 	instance.DiskUsage = inputInstance.Usage.Disk
-	instance.Index = inputInstance.Index
+	instance.Index = index
 	instance.IsolationSegment = inputInstance.IsolationSegment
 	instance.MemoryQuota = inputInstance.MemQuota
 	instance.MemoryUsage = inputInstance.Usage.Mem
@@ -80,6 +86,20 @@ func (instance *ProcessInstance) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func toInt(podName string) (int64, error) {
+	instanceName := podName[len(podName)-5:]
+	instanceNumber, err := strconv.ParseInt(instanceName, 36, 32)
+	if err != nil {
+		return 0, errors.Wrapf(err, "could not parse instanceName %q as a 36-base number", instanceName)
+	}
+
+	return instanceNumber, nil
+}
+
+func toBase36String(index int) string {
+	return strconv.FormatInt(int64(index), 36)
+}
+
 // DeleteApplicationProcessInstance deletes/stops a particular application's
 // process instance.
 func (client *Client) DeleteApplicationProcessInstance(appGUID string, processType string, instanceIndex int) (Warnings, error) {
@@ -88,7 +108,7 @@ func (client *Client) DeleteApplicationProcessInstance(appGUID string, processTy
 		URIParams: internal.Params{
 			"app_guid": appGUID,
 			"type":     processType,
-			"index":    strconv.Itoa(instanceIndex),
+			"index":    toBase36String(instanceIndex),
 		},
 	})
 
