@@ -42,7 +42,8 @@ func NewWrappedCloudControllerClient(config command.Config, ui command.UI) (*ccv
 		ccWrappers = append(ccWrappers, ccWrapper.NewRequestLogger(ui.RequestLoggerFileWriter(location)))
 	}
 
-	authWrapper := ccWrapper.NewUAAAuthentication(nil, config)
+	// authWrapper := ccWrapper.NewUAAAuthentication(nil, config)
+	authWrapper := ccWrapper.NewK8sAuth()
 
 	ccWrappers = append(ccWrappers, authWrapper)
 	ccWrappers = append(ccWrappers, ccWrapper.NewRetryRequest(config.RequestRetryCount()))
@@ -54,7 +55,9 @@ func NewWrappedCloudControllerClient(config command.Config, ui command.UI) (*ccv
 		JobPollingInterval: config.PollingInterval(),
 		Wrappers:           ccWrappers,
 	})
-	return ccClient, authWrapper
+
+	// keep the return values happy :(
+	return ccClient, ccWrapper.NewUAAAuthentication(nil, config)
 }
 
 func newWrappedUAAClient(config command.Config, ui command.UI, ccClient *ccv3.Client, authWrapper *ccWrapper.UAAAuthentication) (*uaa.Client, error) {

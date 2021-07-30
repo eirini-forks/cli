@@ -33,11 +33,10 @@ require (
 	github.com/elazarl/goproxy v0.0.0-20200809112317-0581fc3aee2d // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20200809112317-0581fc3aee2d // indirect
 	github.com/fatih/color v1.5.1-0.20170926111411-5df930a27be2
-	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135
-	github.com/gorilla/websocket v1.2.1-0.20171201014301-b89020ee79b8 // indirect
+	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jessevdk/go-flags v1.4.1-0.20181221193153-c0795c8afcf4
-	github.com/kr/pty v1.1.1
+	github.com/kr/pty v1.1.5
 	github.com/lunixbochs/vtclean v1.0.0
 	github.com/mailru/easyjson v0.0.0-20190626092158-b2ccc519800e // indirect
 	github.com/mattn/go-colorable v0.1.0
@@ -57,11 +56,13 @@ require (
 	github.com/tedsuo/ifrit v0.0.0-20191009134036-9a97d0632f00 // indirect
 	github.com/tedsuo/rata v1.0.1-0.20170830210128-07d200713958
 	github.com/vito/go-interact v0.0.0-20171111012221-fa338ed9e9ec
-	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
-	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
-	golang.org/x/text v0.3.3
+	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
+	golang.org/x/net v0.0.0-20210224082022-3d97a244fca7
+	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
+	golang.org/x/text v0.3.4
 	gopkg.in/cheggaaa/pb.v1 v1.0.27
-	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v2 v2.4.0
+	k8s.io/client-go v0.18.9
 )
 
 replace gopkg.in/fsnotify.v1 v1.4.7 => github.com/fsnotify/fsnotify v1.4.7

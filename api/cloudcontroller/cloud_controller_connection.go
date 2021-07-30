@@ -2,12 +2,10 @@ package cloudcontroller
 
 import (
 	"crypto/x509"
-	"encoding/base64"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -51,15 +49,6 @@ func (connection *CloudControllerConnection) Make(request *Request, passedRespon
 	// be populated with a previous response. We reset in case there's an HTTP
 	// error and we don't repopulate it in populateResponse.
 	passedResponse.reset()
-
-	cmd := exec.Command("cred-helper")
-	out, err := cmd.Output()
-	if err != nil {
-		panic(err)
-	}
-
-	auth := "execcredential " + base64.StdEncoding.EncodeToString(out)
-	request.Header.Set("Authorization", auth)
 
 	response, err := connection.HTTPClient.Do(request.Request)
 	if err != nil {
