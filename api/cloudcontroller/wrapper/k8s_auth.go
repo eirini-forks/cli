@@ -1,17 +1,22 @@
 package wrapper
 
 import (
-	"context"
+	"bytes"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 
-	"golang.org/x/oauth2/google"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"code.cloudfoundry.org/cli/api/cloudcontroller"
+
+	_ "k8s.io/client-go/plugin/pkg/client/auth/azure"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
 
 type K8sAuth struct {
@@ -69,28 +74,18 @@ func (t *K8sAuth) Make(request *cloudcontroller.Request, passedResponse *cloudco
 		request.Header.Set("Authorization", auth)
 	}
 
-	if user.AuthProvider != nil && user.AuthProvider.Name == "gcp" {
-		tokenSource, err := google.DefaultTokenSource(context.Background(), "https://www.googleapis.com/auth/cloud-platform")
+	if user.AuthProvider != nil {
+		cluster := conf.Clusters[curCtx.Cluster].Server
+		persister := clientcmd.PersisterForUser(pathOpts, curCtx.AuthInfo)
+		authProvider, err := rest.GetAuthProvider(cluster, user.AuthProvider, persister)
 		if err != nil {
-			return fmt.Errorf("could not get tokenSource: %w", err)
+			return fmt.Errorf("could not get auth provider: %w", err)
 		}
 
-		token, err := tokenSource.Token()
-		if err != nil {
-			return fmt.Errorf("could not get token: %w", err)
-		}
-
-		cred := ExecCredential{
-			APIVersion: "client.authentication.k8s.io/v1beta1",
-			Kind:       "ExecCredential",
-			Status: ExecCredentialStatus{
-				Token: token.AccessToken,
-			},
-		}
-		credJson, _ := json.Marshal(cred)
-
-		auth := "execcredential " + base64.StdEncoding.EncodeToString(credJson)
-		request.Header.Set("Authorization", auth)
+		connectionRoundTripper := ConnectionRoundTripper{connection: t.connection, response: passedResponse}
+		wrappedRoundTripper := authProvider.WrapTransport(connectionRoundTripper)
+		_, err = wrappedRoundTripper.RoundTrip(request.Request)
+		return err
 	}
 
 	return t.connection.Make(request, passedResponse)
@@ -99,4 +94,30 @@ func (t *K8sAuth) Make(request *cloudcontroller.Request, passedResponse *cloudco
 func (t *K8sAuth) Wrap(innerconnection cloudcontroller.Connection) cloudcontroller.Connection {
 	t.connection = innerconnection
 	return t
+}
+
+type ConnectionRoundTripper struct {
+	connection cloudcontroller.Connection
+	response   *cloudcontroller.Response
+}
+
+func (rt ConnectionRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	var bodyBytes []byte
+	var err error
+
+	if req.Body != nil {
+		bodyBytes, err = ioutil.ReadAll(req.Body)
+		req.Body.Close()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	ccReq := cloudcontroller.NewRequest(req, bytes.NewReader(bodyBytes))
+	err = rt.connection.Make(ccReq, rt.response)
+	if err != nil {
+		return nil, err
+	}
+
+	return rt.response.HTTPResponse, nil
 }
