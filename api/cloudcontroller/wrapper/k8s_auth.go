@@ -2,19 +2,23 @@ package wrapper
 
 import (
 	"bytes"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
-	"os/exec"
 
+	"k8s.io/client-go/pkg/apis/clientauthentication"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/transport"
 
 	"code.cloudfoundry.org/cli/api/cloudcontroller"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/azure"
+	authexec "k8s.io/client-go/plugin/pkg/client/auth/exec"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
@@ -25,16 +29,6 @@ type K8sAuth struct {
 
 func NewK8sAuth() *K8sAuth {
 	return &K8sAuth{}
-}
-
-type ExecCredential struct {
-	APIVersion string               `json:"apiVersion"`
-	Kind       string               `json:"ExecCredential"`
-	Status     ExecCredentialStatus `json:"status"`
-}
-
-type ExecCredentialStatus struct {
-	Token string `json:"token"`
 }
 
 func (t *K8sAuth) Make(request *cloudcontroller.Request, passedResponse *cloudcontroller.Response) error {
@@ -60,18 +54,56 @@ func (t *K8sAuth) Make(request *cloudcontroller.Request, passedResponse *cloudco
 	}
 
 	if user.Exec != nil {
-		cmd := exec.Command(user.Exec.Command)
-		cmd.Args = append(cmd.Args, user.Exec.Args...)
-
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
-		out, err := cmd.Output()
+		authProvider, err := authexec.GetAuthenticator(user.Exec)
 		if err != nil {
-			return err
+			return fmt.Errorf("could not get auth provider: %w", err)
 		}
 
-		auth := "execcredential " + base64.StdEncoding.EncodeToString(out)
-		request.Header.Set("Authorization", auth)
+		var transportCfg transport.Config
+		authProvider.UpdateTransportConfig(&transportCfg)
+
+		cert, err := transportCfg.TLS.GetCert()
+		if err != nil {
+			return fmt.Errorf("could not get creds from exec plugin: %w", err)
+		}
+
+		if cert != nil {
+			var buf bytes.Buffer
+
+			if err := pem.Encode(&buf, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Leaf.Raw}); err != nil {
+				return fmt.Errorf("could not convert certificate to PEM format: %w", err)
+			}
+			certPEM := buf.String()
+
+			key, err := x509.MarshalPKCS8PrivateKey(cert.PrivateKey)
+			if err != nil {
+				return fmt.Errorf("could not marshal private key: %w", err)
+			}
+
+			buf.Reset()
+			if err := pem.Encode(&buf, &pem.Block{Type: "PRIVATE KEY", Bytes: key}); err != nil {
+				return fmt.Errorf("could not convert key to PEM format: %w", err)
+			}
+			keyPEM := buf.String()
+
+			execCredBytes, err := json.Marshal(clientauthentication.ExecCredential{
+				Status: &clientauthentication.ExecCredentialStatus{
+					ClientCertificateData: certPEM,
+					ClientKeyData:         keyPEM,
+				},
+			})
+			if err != nil {
+				return fmt.Errorf("could not marshal execCred to json: %w", err)
+			}
+
+			auth := "execcredential " + base64.StdEncoding.EncodeToString(execCredBytes)
+			request.Header.Set("Authorization", auth)
+		}
+
+		connectionRoundTripper := ConnectionRoundTripper{connection: t.connection, response: passedResponse}
+		wrappedRoundTripper := transportCfg.WrapTransport(connectionRoundTripper)
+		_, err = wrappedRoundTripper.RoundTrip(request.Request)
+		return err
 	}
 
 	if user.AuthProvider != nil {
