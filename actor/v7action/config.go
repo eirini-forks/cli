@@ -27,4 +27,7 @@ type Config interface {
 	Target() string
 	UAAGrantType() string
 	UnsetOrganizationAndSpaceInformation()
+	IsKubernetes() bool
+	KubernetesUser() string
+	SetKubernetesUser(string)
 }

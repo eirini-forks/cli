@@ -99,6 +99,10 @@ func (info Info) ccV3Link() string {
 	return info.Links.CCV3.HREF
 }
 
+func (info Info) IsKubernetes() bool {
+	return true
+}
+
 // ResourceLinks represents the information returned back from /v3.
 type ResourceLinks map[string]resources.APILink
 

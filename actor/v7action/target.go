@@ -31,6 +31,7 @@ func (actor Actor) SetTarget(settings TargetSettings) (Warnings, error) {
 		Routing:           rootInfo.Routing(),
 		SkipSSLValidation: settings.SkipSSLValidation,
 		UAA:               rootInfo.UAA(),
+		Kubernetes:        rootInfo.IsKubernetes(),
 	})
 
 	actor.Config.SetTokenInformation("", "", "")

@@ -40,6 +40,16 @@ type FakeConfig struct {
 	dialTimeoutReturnsOnCall map[int]struct {
 		result1 time.Duration
 	}
+	IsKubernetesStub        func() bool
+	isKubernetesMutex       sync.RWMutex
+	isKubernetesArgsForCall []struct {
+	}
+	isKubernetesReturns struct {
+		result1 bool
+	}
+	isKubernetesReturnsOnCall map[int]struct {
+		result1 bool
+	}
 	PollingIntervalStub        func() time.Duration
 	pollingIntervalMutex       sync.RWMutex
 	pollingIntervalArgsForCall []struct {
@@ -314,6 +324,58 @@ func (fake *FakeConfig) DialTimeoutReturnsOnCall(i int, result1 time.Duration) {
 	}
 	fake.dialTimeoutReturnsOnCall[i] = struct {
 		result1 time.Duration
+	}{result1}
+}
+
+func (fake *FakeConfig) IsKubernetes() bool {
+	fake.isKubernetesMutex.Lock()
+	ret, specificReturn := fake.isKubernetesReturnsOnCall[len(fake.isKubernetesArgsForCall)]
+	fake.isKubernetesArgsForCall = append(fake.isKubernetesArgsForCall, struct {
+	}{})
+	fake.recordInvocation("IsKubernetes", []interface{}{})
+	fake.isKubernetesMutex.Unlock()
+	if fake.IsKubernetesStub != nil {
+		return fake.IsKubernetesStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.isKubernetesReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakeConfig) IsKubernetesCallCount() int {
+	fake.isKubernetesMutex.RLock()
+	defer fake.isKubernetesMutex.RUnlock()
+	return len(fake.isKubernetesArgsForCall)
+}
+
+func (fake *FakeConfig) IsKubernetesCalls(stub func() bool) {
+	fake.isKubernetesMutex.Lock()
+	defer fake.isKubernetesMutex.Unlock()
+	fake.IsKubernetesStub = stub
+}
+
+func (fake *FakeConfig) IsKubernetesReturns(result1 bool) {
+	fake.isKubernetesMutex.Lock()
+	defer fake.isKubernetesMutex.Unlock()
+	fake.IsKubernetesStub = nil
+	fake.isKubernetesReturns = struct {
+		result1 bool
+	}{result1}
+}
+
+func (fake *FakeConfig) IsKubernetesReturnsOnCall(i int, result1 bool) {
+	fake.isKubernetesMutex.Lock()
+	defer fake.isKubernetesMutex.Unlock()
+	fake.IsKubernetesStub = nil
+	if fake.isKubernetesReturnsOnCall == nil {
+		fake.isKubernetesReturnsOnCall = make(map[int]struct {
+			result1 bool
+		})
+	}
+	fake.isKubernetesReturnsOnCall[i] = struct {
+		result1 bool
 	}{result1}
 }
 
@@ -954,6 +1016,8 @@ func (fake *FakeConfig) Invocations() map[string][][]interface{} {
 	defer fake.accessTokenMutex.RUnlock()
 	fake.dialTimeoutMutex.RLock()
 	defer fake.dialTimeoutMutex.RUnlock()
+	fake.isKubernetesMutex.RLock()
+	defer fake.isKubernetesMutex.RUnlock()
 	fake.pollingIntervalMutex.RLock()
 	defer fake.pollingIntervalMutex.RUnlock()
 	fake.refreshTokenMutex.RLock()

@@ -80,4 +80,7 @@ type Config interface {
 	Verbose() (bool, []string)
 	WritePluginConfig() error
 	WriteConfig() error
+	IsKubernetes() bool
+	KubernetesUser() string
+	SetKubernetesUser(string)
 }

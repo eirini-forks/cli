@@ -208,7 +208,7 @@ func (cmd *LoginCommand) determineAPIEndpoint() (v7action.TargetSettings, error)
 	endpoint := cmd.APIEndpoint
 	skipSSLValidation := cmd.SkipSSLValidation
 
-	var configTarget = cmd.Config.Target()
+	configTarget := cmd.Config.Target()
 
 	if endpoint == "" && configTarget != "" {
 		endpoint = configTarget
@@ -255,7 +255,7 @@ func (cmd *LoginCommand) targetAPI(settings v7action.TargetSettings) error {
 
 func (cmd *LoginCommand) authenticate() error {
 	var err error
-	var credentials = make(map[string]string)
+	credentials := make(map[string]string)
 
 	prompts, err := cmd.Actor.GetLoginPrompts()
 	if err != nil {
@@ -272,7 +272,11 @@ func (cmd *LoginCommand) authenticate() error {
 	}
 
 	for key, prompt := range nonPasswordPrompts {
-		credentials[key], err = cmd.UI.DisplayTextPrompt(prompt.DisplayName)
+		if prompt.Type == coreconfig.AuthPromptTypeMenu {
+			credentials[key], err = cmd.UI.DisplayTextMenu(prompt.Entries, prompt.DisplayName)
+		} else {
+			credentials[key], err = cmd.UI.DisplayTextPrompt(prompt.DisplayName)
+		}
 		if err != nil {
 			return err
 		}
@@ -459,7 +463,6 @@ func (cmd *LoginCommand) promptChosenOrg(orgs []resources.Organization) (resourc
 	}
 
 	chosenOrgName, err := cmd.promptMenu(orgNames, "Select an org:", "Org")
-
 	if err != nil {
 		if invalidChoice, ok := err.(ui.InvalidChoiceError); ok {
 			if cmd.Space != "" {
