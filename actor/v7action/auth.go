@@ -9,9 +9,10 @@ import (
 	"code.cloudfoundry.org/cli/actor/actionerror"
 	"code.cloudfoundry.org/cli/api/uaa/constant"
 	"code.cloudfoundry.org/cli/cf/configuration/coreconfig"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
-func (actor Actor) Authenticate(credentials map[string]string, origin string, grantType constant.GrantType) error {
+func (actor DefaultAuthActor) Authenticate(credentials map[string]string, origin string, grantType constant.GrantType) error {
 	if grantType == constant.GrantTypePassword && actor.Config.UAAGrantType() == string(constant.GrantTypeClientCredentials) {
 		return actionerror.PasswordGrantTypeLogoutRequiredError{}
 	}
@@ -39,7 +40,31 @@ func (actor Actor) Authenticate(credentials map[string]string, origin string, gr
 	return nil
 }
 
-func (actor Actor) GetLoginPrompts() (map[string]coreconfig.AuthPrompt, error) {
+func (actor KubernetesAuthActor) Authenticate(credentials map[string]string, origin string, grantType constant.GrantType) error {
+	actor.config.SetKubernetesUser(credentials["k8s-user"])
+	return nil
+}
+
+func (actor KubernetesAuthActor) GetLoginPrompts() (map[string]coreconfig.AuthPrompt, error) {
+	pathOpts := clientcmd.NewDefaultPathOptions()
+	conf, err := pathOpts.GetStartingConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	var usernames []string
+	for username, _ := range conf.AuthInfos {
+		usernames = append(usernames, username)
+	}
+
+	return map[string]coreconfig.AuthPrompt{"k8s-user": coreconfig.AuthPrompt{
+		Type:        coreconfig.AuthPromptTypeMenu,
+		Entries:     usernames,
+		DisplayName: "Choose your Kubernetes user",
+	}}, nil
+}
+
+func (actor DefaultAuthActor) GetLoginPrompts() (map[string]coreconfig.AuthPrompt, error) {
 	rawPrompts, err := actor.UAAClient.GetLoginPrompts()
 	if err != nil {
 		return nil, err
@@ -75,7 +100,6 @@ func (actor Actor) isTokenRevocable(token string) bool {
 	}
 
 	jsonPayload, err := base64.RawURLEncoding.DecodeString(segments[1])
-
 	if err != nil {
 		return false
 	}

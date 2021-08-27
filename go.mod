@@ -62,3 +62,5 @@ require (
 replace gopkg.in/fsnotify.v1 v1.4.7 => github.com/fsnotify/fsnotify v1.4.7
 
 replace github.com/golang/protobuf => github.com/golang/protobuf v1.3.4
+
+replace k8s.io/client-go => k8s.io/client-go v0.18.19

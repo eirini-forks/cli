@@ -33,6 +33,8 @@ type JSONConfig struct {
 	UAAGrantType             string             `json:"UAAGrantType"`
 	UAAOAuthClient           string             `json:"UAAOAuthClient"`
 	UAAOAuthClientSecret     string             `json:"UAAOAuthClientSecret"`
+	Kubernetes               bool               `json:"Kubernetes"`
+	KubernetesUser           string             `json:"KubernetesUser"`
 }
 
 // Organization contains basic information about the targeted organization.
@@ -192,6 +194,7 @@ type TargetInformationArgs struct {
 	Routing           string
 	SkipSSLValidation bool
 	UAA               string
+	Kubernetes        bool
 }
 
 // SetTargetInformation sets the currently targeted CC API and related other
@@ -205,6 +208,7 @@ func (config *Config) SetTargetInformation(args TargetInformationArgs) {
 	config.ConfigFile.RoutingEndpoint = args.Routing
 	config.ConfigFile.SkipSSLValidation = args.SkipSSLValidation
 	config.ConfigFile.NetworkPolicyV1Endpoint = args.NetworkPolicyV1
+	config.ConfigFile.Kubernetes = args.Kubernetes
 
 	config.ConfigFile.UAAEndpoint = args.UAA
 	config.ConfigFile.AuthorizationEndpoint = args.Auth
@@ -319,7 +323,6 @@ func (config *Config) UnsetUserInformation() {
 	config.SetUAAClientCredentials(DefaultUAAOAuthClient, DefaultUAAOAuthClientSecret)
 
 	config.UnsetOrganizationAndSpaceInformation()
-
 }
 
 // V7SetSpaceInformation sets the currently targeted space.
