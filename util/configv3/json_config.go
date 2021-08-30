@@ -76,7 +76,7 @@ func (config *Config) AuthorizationEndpoint() string {
 // CurrentUser returns user information decoded from the JWT access token in
 // .cf/config.json.
 func (config *Config) CurrentUser() (User, error) {
-	return decodeUserFromJWT(config.ConfigFile.AccessToken)
+	return config.userConfig.CurrentUser()
 }
 
 // CurrentUserName returns the name of a user as returned by CurrentUser()

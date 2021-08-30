@@ -8,6 +8,30 @@ import (
 	"code.cloudfoundry.org/cli/version"
 )
 
+type UserConfig interface {
+	CurrentUser() (User, error)
+}
+
+type DefaultUserConfig struct {
+	ConfigFile JSONConfig
+}
+
+// CurrentUser returns user information decoded from the JWT access token in
+// .cf/config.json.
+func (config *DefaultUserConfig) CurrentUser() (User, error) {
+	return decodeUserFromJWT(config.ConfigFile.AccessToken)
+}
+
+type KubernetesUserConfig struct {
+	ConfigFile JSONConfig
+}
+
+func (config *KubernetesUserConfig) CurrentUser() (User, error) {
+	return User{
+		Name: config.ConfigFile.KubernetesUser,
+	}, nil
+}
+
 // Config combines the settings taken from the .cf/config.json, os.ENV, and the
 // plugin config.
 type Config struct {
@@ -24,6 +48,8 @@ type Config struct {
 	detectedSettings detectedSettings
 
 	pluginsConfig PluginsConfig
+
+	userConfig UserConfig
 }
 
 // BinaryVersion is the current version of the CF binary.
