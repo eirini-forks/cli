@@ -139,6 +139,11 @@ func LoadConfig(flags ...FlagOverride) (*Config, error) {
 		return nil, err
 	}
 
+	config.userConfig = &DefaultUserConfig{ConfigFile: config.ConfigFile}
+	if config.IsKubernetes() {
+		config.userConfig = &KubernetesUserConfig{ConfigFile: config.ConfigFile}
+	}
+
 	if len(flags) > 0 {
 		config.Flags = flags[0]
 	}
