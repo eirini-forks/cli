@@ -46,6 +46,8 @@ type Data struct {
 	UAAGrantType             string
 	UAAOAuthClient           string
 	UAAOAuthClientSecret     string
+	Kubernetes               bool
+	KubernetesUser           string
 }
 
 func NewData() *Data {
