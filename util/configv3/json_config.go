@@ -342,12 +342,12 @@ func decodeUserFromJWT(accessToken string) (User, error) {
 
 	var name, GUID, origin string
 	var isClient bool
-	if claims.Has("user_name") {
-		name = claims.Get("user_name").(string)
-		GUID = claims.Get("user_id").(string)
-		origin = claims.Get("origin").(string)
+	if claims.Has("name") {
+		name = claims.Get("name").(string)
+		GUID = claims.Get("sub").(string)
+		origin = claims.Get("iss").(string)
 		isClient = false
-	} else {
+	} else if claims.Has("client_id") {
 		name = claims.Get("client_id").(string)
 		GUID = name
 		isClient = true
