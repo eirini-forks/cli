@@ -42,8 +42,11 @@ func NewWrappedCloudControllerClient(config command.Config, ui command.UI) (*ccv
 		ccWrappers = append(ccWrappers, ccWrapper.NewRequestLogger(ui.RequestLoggerFileWriter(location)))
 	}
 
-	// authWrapper := ccWrapper.NewUAAAuthentication(nil, config)
-	authWrapper := ccWrapper.NewK8sAuth()
+	var authWrapper ccv3.ConnectionWrapper
+	authWrapper = ccWrapper.NewUAAAuthentication(nil, config)
+	if config.IsKubernetes() {
+		authWrapper = ccWrapper.NewK8sAuth(config)
+	}
 
 	ccWrappers = append(ccWrappers, authWrapper)
 	ccWrappers = append(ccWrappers, ccWrapper.NewRetryRequest(config.RequestRetryCount()))

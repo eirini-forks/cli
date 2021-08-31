@@ -23,7 +23,7 @@ func (config *DefaultUserConfig) CurrentUser() (User, error) {
 }
 
 type KubernetesUserConfig struct {
-	ConfigFile JSONConfig
+	ConfigFile *JSONConfig
 }
 
 func (config *KubernetesUserConfig) CurrentUser() (User, error) {
