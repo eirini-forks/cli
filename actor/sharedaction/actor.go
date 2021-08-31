@@ -4,12 +4,18 @@ package sharedaction
 
 // Actor handles all shared actions
 type Actor struct {
-	Config Config
+	Config     Config
+	isLoggedIn func(config Config) bool
 }
 
 // NewActor returns an Actor with default settings
 func NewActor(config Config) *Actor {
-	return &Actor{
-		Config: config,
+	actor := &Actor{
+		Config:     config,
+		isLoggedIn: DefaultIsLoggedIn,
 	}
+	if config.IsKubernetes() {
+		actor.isLoggedIn = KubernetesIsLoggedIn
+	}
+	return actor
 }

@@ -12,4 +12,6 @@ type Config interface {
 	RefreshToken() string
 	TargetedOrganizationName() string
 	Verbose() (bool, []string)
+	IsKubernetes() bool
+	KubernetesUser() string
 }
