@@ -221,6 +221,16 @@ type FakeConfig struct {
 	isTTYReturnsOnCall map[int]struct {
 		result1 bool
 	}
+	KubernetesUserStub        func() string
+	kubernetesUserMutex       sync.RWMutex
+	kubernetesUserArgsForCall []struct {
+	}
+	kubernetesUserReturns struct {
+		result1 string
+	}
+	kubernetesUserReturnsOnCall map[int]struct {
+		result1 string
+	}
 	LocaleStub        func() string
 	localeMutex       sync.RWMutex
 	localeArgsForCall []struct {
@@ -379,6 +389,11 @@ type FakeConfig struct {
 	SetColorEnabledStub        func(string)
 	setColorEnabledMutex       sync.RWMutex
 	setColorEnabledArgsForCall []struct {
+		arg1 string
+	}
+	SetKubernetesUserStub        func(string)
+	setKubernetesUserMutex       sync.RWMutex
+	setKubernetesUserArgsForCall []struct {
 		arg1 string
 	}
 	SetLocaleStub        func(string)
@@ -1705,6 +1720,58 @@ func (fake *FakeConfig) IsTTYReturnsOnCall(i int, result1 bool) {
 	}{result1}
 }
 
+func (fake *FakeConfig) KubernetesUser() string {
+	fake.kubernetesUserMutex.Lock()
+	ret, specificReturn := fake.kubernetesUserReturnsOnCall[len(fake.kubernetesUserArgsForCall)]
+	fake.kubernetesUserArgsForCall = append(fake.kubernetesUserArgsForCall, struct {
+	}{})
+	fake.recordInvocation("KubernetesUser", []interface{}{})
+	fake.kubernetesUserMutex.Unlock()
+	if fake.KubernetesUserStub != nil {
+		return fake.KubernetesUserStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.kubernetesUserReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakeConfig) KubernetesUserCallCount() int {
+	fake.kubernetesUserMutex.RLock()
+	defer fake.kubernetesUserMutex.RUnlock()
+	return len(fake.kubernetesUserArgsForCall)
+}
+
+func (fake *FakeConfig) KubernetesUserCalls(stub func() string) {
+	fake.kubernetesUserMutex.Lock()
+	defer fake.kubernetesUserMutex.Unlock()
+	fake.KubernetesUserStub = stub
+}
+
+func (fake *FakeConfig) KubernetesUserReturns(result1 string) {
+	fake.kubernetesUserMutex.Lock()
+	defer fake.kubernetesUserMutex.Unlock()
+	fake.KubernetesUserStub = nil
+	fake.kubernetesUserReturns = struct {
+		result1 string
+	}{result1}
+}
+
+func (fake *FakeConfig) KubernetesUserReturnsOnCall(i int, result1 string) {
+	fake.kubernetesUserMutex.Lock()
+	defer fake.kubernetesUserMutex.Unlock()
+	fake.KubernetesUserStub = nil
+	if fake.kubernetesUserReturnsOnCall == nil {
+		fake.kubernetesUserReturnsOnCall = make(map[int]struct {
+			result1 string
+		})
+	}
+	fake.kubernetesUserReturnsOnCall[i] = struct {
+		result1 string
+	}{result1}
+}
+
 func (fake *FakeConfig) Locale() string {
 	fake.localeMutex.Lock()
 	ret, specificReturn := fake.localeReturnsOnCall[len(fake.localeArgsForCall)]
@@ -2554,6 +2621,37 @@ func (fake *FakeConfig) SetColorEnabledArgsForCall(i int) string {
 	fake.setColorEnabledMutex.RLock()
 	defer fake.setColorEnabledMutex.RUnlock()
 	argsForCall := fake.setColorEnabledArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeConfig) SetKubernetesUser(arg1 string) {
+	fake.setKubernetesUserMutex.Lock()
+	fake.setKubernetesUserArgsForCall = append(fake.setKubernetesUserArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("SetKubernetesUser", []interface{}{arg1})
+	fake.setKubernetesUserMutex.Unlock()
+	if fake.SetKubernetesUserStub != nil {
+		fake.SetKubernetesUserStub(arg1)
+	}
+}
+
+func (fake *FakeConfig) SetKubernetesUserCallCount() int {
+	fake.setKubernetesUserMutex.RLock()
+	defer fake.setKubernetesUserMutex.RUnlock()
+	return len(fake.setKubernetesUserArgsForCall)
+}
+
+func (fake *FakeConfig) SetKubernetesUserCalls(stub func(string)) {
+	fake.setKubernetesUserMutex.Lock()
+	defer fake.setKubernetesUserMutex.Unlock()
+	fake.SetKubernetesUserStub = stub
+}
+
+func (fake *FakeConfig) SetKubernetesUserArgsForCall(i int) string {
+	fake.setKubernetesUserMutex.RLock()
+	defer fake.setKubernetesUserMutex.RUnlock()
+	argsForCall := fake.setKubernetesUserArgsForCall[i]
 	return argsForCall.arg1
 }
 
@@ -3885,6 +3983,8 @@ func (fake *FakeConfig) Invocations() map[string][][]interface{} {
 	defer fake.isKubernetesMutex.RUnlock()
 	fake.isTTYMutex.RLock()
 	defer fake.isTTYMutex.RUnlock()
+	fake.kubernetesUserMutex.RLock()
+	defer fake.kubernetesUserMutex.RUnlock()
 	fake.localeMutex.RLock()
 	defer fake.localeMutex.RUnlock()
 	fake.logCacheEndpointMutex.RLock()
@@ -3921,6 +4021,8 @@ func (fake *FakeConfig) Invocations() map[string][][]interface{} {
 	defer fake.setAsyncTimeoutMutex.RUnlock()
 	fake.setColorEnabledMutex.RLock()
 	defer fake.setColorEnabledMutex.RUnlock()
+	fake.setKubernetesUserMutex.RLock()
+	defer fake.setKubernetesUserMutex.RUnlock()
 	fake.setLocaleMutex.RLock()
 	defer fake.setLocaleMutex.RUnlock()
 	fake.setMinCLIVersionMutex.RLock()
