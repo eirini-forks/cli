@@ -10,70 +10,13 @@ import (
 	"github.com/blang/semver"
 )
 
-type UserConfigRepository interface {
-	AccessToken(data *Data) string
-	UserEmail(data *Data) string
-	UserGUID(data *Data) string
-	Username(data *Data) string
-	IsLoggedIn(data *Data) bool
-}
-
-type DefaultUserConfigRepository struct{}
-
-func (c *DefaultUserConfigRepository) AccessToken(data *Data) string {
-	return data.AccessToken
-}
-
-func (c *DefaultUserConfigRepository) UserEmail(data *Data) string {
-	return NewTokenInfo(data.AccessToken).Email
-}
-
-func (c *DefaultUserConfigRepository) UserGUID(data *Data) string {
-	return NewTokenInfo(data.AccessToken).UserGUID
-}
-
-func (c *DefaultUserConfigRepository) Username(data *Data) string {
-	t := NewTokenInfo(data.AccessToken)
-	if t.Username != "" {
-		return t.Username
-	}
-	return t.ClientID
-}
-
-func (c *DefaultUserConfigRepository) IsLoggedIn(data *Data) bool {
-	return data.AccessToken != ""
-}
-
-type KubernetesUserConfigRepository struct{}
-
-func (c *KubernetesUserConfigRepository) AccessToken(data *Data) string {
-	panic("KubernetesUserConfigRepository does not support access token")
-}
-
-func (c *KubernetesUserConfigRepository) UserEmail(data *Data) string {
-	return "alice@neverland.org"
-}
-
-func (c *KubernetesUserConfigRepository) UserGUID(data *Data) string {
-	return data.KubernetesUser
-}
-
-func (c *KubernetesUserConfigRepository) Username(data *Data) string {
-	return data.KubernetesUser
-}
-
-func (c *KubernetesUserConfigRepository) IsLoggedIn(data *Data) bool {
-	return data.KubernetesUser != ""
-}
-
 type ConfigRepository struct {
-	CFCLIVersion         string
-	data                 *Data
-	mutex                *sync.RWMutex
-	initOnce             *sync.Once
-	persistor            configuration.Persistor
-	onError              func(error)
-	userConfigRepository UserConfigRepository
+	CFCLIVersion string
+	data         *Data
+	mutex        *sync.RWMutex
+	initOnce     *sync.Once
+	persistor    configuration.Persistor
+	onError      func(error)
 }
 
 type CCInfo struct {
@@ -97,7 +40,7 @@ func NewRepositoryFromFilepath(filepath string, errorHandler func(error)) Reposi
 func NewRepositoryFromPersistor(persistor configuration.Persistor, errorHandler func(error)) Repository {
 	data := NewData()
 	if !persistor.Exists() {
-		//set default plugin repo
+		// set default plugin repo
 		data.PluginRepos = append(data.PluginRepos, models.PluginRepo{
 			Name: "CF-Community",
 			URL:  "https://plugins.cloudfoundry.org",
@@ -204,11 +147,6 @@ func (c *ConfigRepository) init() {
 		if err != nil {
 			c.onError(err)
 		}
-
-		c.userConfigRepository = &DefaultUserConfigRepository{}
-		if c.data.Kubernetes {
-			c.userConfigRepository = &KubernetesUserConfigRepository{}
-		}
 	})
 }
 
@@ -306,7 +244,7 @@ func (c *ConfigRepository) HasAPIEndpoint() (hasEndpoint bool) {
 
 func (c *ConfigRepository) AccessToken() (accessToken string) {
 	c.read(func() {
-		accessToken = c.userConfigRepository.AccessToken(c.data)
+		accessToken = c.data.AccessToken
 	})
 	return
 }
@@ -355,28 +293,33 @@ func (c *ConfigRepository) SpaceFields() (space models.SpaceFields) {
 
 func (c *ConfigRepository) UserEmail() (email string) {
 	c.read(func() {
-		email = c.userConfigRepository.UserEmail(c.data)
+		email = NewTokenInfo(c.data.AccessToken).Email
 	})
 	return
 }
 
 func (c *ConfigRepository) UserGUID() (guid string) {
 	c.read(func() {
-		guid = c.userConfigRepository.UserGUID(c.data)
+		guid = NewTokenInfo(c.data.AccessToken).UserGUID
 	})
 	return
 }
 
 func (c *ConfigRepository) Username() (name string) {
 	c.read(func() {
-		name = c.userConfigRepository.Username(c.data)
+		t := NewTokenInfo(c.data.AccessToken)
+		if t.Username != "" {
+			name = t.Username
+		} else {
+			name = t.ClientID
+		}
 	})
 	return
 }
 
 func (c *ConfigRepository) IsLoggedIn() (loggedIn bool) {
 	c.read(func() {
-		loggedIn = c.userConfigRepository.IsLoggedIn(c.data)
+		loggedIn = c.data.AccessToken != ""
 	})
 	return
 }
