@@ -10,6 +10,7 @@ import (
 
 type UserConfig interface {
 	CurrentUser() (User, error)
+	IsLoggedIn() bool
 }
 
 type DefaultUserConfig struct {
@@ -22,6 +23,10 @@ func (config *DefaultUserConfig) CurrentUser() (User, error) {
 	return decodeUserFromJWT(config.ConfigFile.AccessToken)
 }
 
+func (config *DefaultUserConfig) IsLoggedIn() bool {
+	return config.ConfigFile.AccessToken != "" || config.ConfigFile.RefreshToken != ""
+}
+
 type KubernetesUserConfig struct {
 	ConfigFile *JSONConfig
 }
@@ -30,6 +35,10 @@ func (config *KubernetesUserConfig) CurrentUser() (User, error) {
 	return User{
 		Name: config.ConfigFile.KubernetesUser,
 	}, nil
+}
+
+func (config *KubernetesUserConfig) IsLoggedIn() bool {
+	return config.ConfigFile.KubernetesUser != ""
 }
 
 // Config combines the settings taken from the .cf/config.json, os.ENV, and the
@@ -49,7 +58,7 @@ type Config struct {
 
 	pluginsConfig PluginsConfig
 
-	userConfig UserConfig
+	UserConfig
 }
 
 // BinaryVersion is the current version of the CF binary.

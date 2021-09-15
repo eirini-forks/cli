@@ -211,6 +211,16 @@ type FakeConfig struct {
 	isKubernetesReturnsOnCall map[int]struct {
 		result1 bool
 	}
+	IsLoggedInStub        func() bool
+	isLoggedInMutex       sync.RWMutex
+	isLoggedInArgsForCall []struct {
+	}
+	isLoggedInReturns struct {
+		result1 bool
+	}
+	isLoggedInReturnsOnCall map[int]struct {
+		result1 bool
+	}
 	IsTTYStub        func() bool
 	isTTYMutex       sync.RWMutex
 	isTTYArgsForCall []struct {
@@ -1664,6 +1674,58 @@ func (fake *FakeConfig) IsKubernetesReturnsOnCall(i int, result1 bool) {
 		})
 	}
 	fake.isKubernetesReturnsOnCall[i] = struct {
+		result1 bool
+	}{result1}
+}
+
+func (fake *FakeConfig) IsLoggedIn() bool {
+	fake.isLoggedInMutex.Lock()
+	ret, specificReturn := fake.isLoggedInReturnsOnCall[len(fake.isLoggedInArgsForCall)]
+	fake.isLoggedInArgsForCall = append(fake.isLoggedInArgsForCall, struct {
+	}{})
+	fake.recordInvocation("IsLoggedIn", []interface{}{})
+	fake.isLoggedInMutex.Unlock()
+	if fake.IsLoggedInStub != nil {
+		return fake.IsLoggedInStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.isLoggedInReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakeConfig) IsLoggedInCallCount() int {
+	fake.isLoggedInMutex.RLock()
+	defer fake.isLoggedInMutex.RUnlock()
+	return len(fake.isLoggedInArgsForCall)
+}
+
+func (fake *FakeConfig) IsLoggedInCalls(stub func() bool) {
+	fake.isLoggedInMutex.Lock()
+	defer fake.isLoggedInMutex.Unlock()
+	fake.IsLoggedInStub = stub
+}
+
+func (fake *FakeConfig) IsLoggedInReturns(result1 bool) {
+	fake.isLoggedInMutex.Lock()
+	defer fake.isLoggedInMutex.Unlock()
+	fake.IsLoggedInStub = nil
+	fake.isLoggedInReturns = struct {
+		result1 bool
+	}{result1}
+}
+
+func (fake *FakeConfig) IsLoggedInReturnsOnCall(i int, result1 bool) {
+	fake.isLoggedInMutex.Lock()
+	defer fake.isLoggedInMutex.Unlock()
+	fake.IsLoggedInStub = nil
+	if fake.isLoggedInReturnsOnCall == nil {
+		fake.isLoggedInReturnsOnCall = make(map[int]struct {
+			result1 bool
+		})
+	}
+	fake.isLoggedInReturnsOnCall[i] = struct {
 		result1 bool
 	}{result1}
 }
@@ -3981,6 +4043,8 @@ func (fake *FakeConfig) Invocations() map[string][][]interface{} {
 	defer fake.hasTargetedSpaceMutex.RUnlock()
 	fake.isKubernetesMutex.RLock()
 	defer fake.isKubernetesMutex.RUnlock()
+	fake.isLoggedInMutex.RLock()
+	defer fake.isLoggedInMutex.RUnlock()
 	fake.isTTYMutex.RLock()
 	defer fake.isTTYMutex.RUnlock()
 	fake.kubernetesUserMutex.RLock()

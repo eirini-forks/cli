@@ -14,4 +14,5 @@ type Config interface {
 	Verbose() (bool, []string)
 	IsKubernetes() bool
 	KubernetesUser() string
+	IsLoggedIn() bool
 }

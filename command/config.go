@@ -83,4 +83,5 @@ type Config interface {
 	IsKubernetes() bool
 	KubernetesUser() string
 	SetKubernetesUser(string)
+	IsLoggedIn() bool
 }
