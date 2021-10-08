@@ -81,8 +81,8 @@ func AddEmptyPaginatedResponse(server *ghttp.Server, path string) {
 }
 
 func fixtureData(name string) []byte {
-	wd := os.Getenv("GOPATH")
-	fp := filepath.Join(wd, "src", "code.cloudfoundry.org", "cli", "integration", "helpers", "fixtures", name)
+	wd := os.Getenv("HOME")
+	fp := filepath.Join(wd, "workspace", "cli", "integration", "helpers", "fixtures", name)
 	b, err := ioutil.ReadFile(fp)
 	Expect(err).ToNot(HaveOccurred())
 	return b
