@@ -113,11 +113,6 @@ func (cmd *LoginCommand) Execute(args []string) error {
 
 	cmd.UI.DisplayNewline()
 
-	cmd.Actor, err = cmd.ActorReloader.Reload(cmd.Config, cmd.UI)
-	if err != nil {
-		return err
-	}
-
 	defer cmd.showStatus()
 
 	var authErr error
@@ -134,6 +129,11 @@ func (cmd *LoginCommand) Execute(args []string) error {
 	err = cmd.Config.WriteConfig()
 	if err != nil {
 		return fmt.Errorf("Error writing config: %s", err.Error())
+	}
+
+	cmd.Actor, err = cmd.ActorReloader.Reload(cmd.Config, cmd.UI)
+	if err != nil {
+		return err
 	}
 
 	if cmd.Organization != "" {

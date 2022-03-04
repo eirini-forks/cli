@@ -75,10 +75,18 @@ type RealRequester struct {
 }
 
 func (requester *RealRequester) InitializeConnection(settings TargetSettings) {
-	requester.connection = cloudcontroller.NewConnection(cloudcontroller.Config{
+	cfg := cloudcontroller.Config{
 		DialTimeout:       settings.DialTimeout,
 		SkipSSLValidation: settings.SkipSSLValidation,
-	})
+	}
+
+	if settings.AuthInfo != "" {
+		fmt.Println("setting up a K8s connection")
+		requester.connection = cloudcontroller.NewK8sConnection(cfg, settings.AuthInfo)
+	} else {
+		fmt.Println("setting up a CC connection")
+		requester.connection = cloudcontroller.NewConnection(cfg)
+	}
 
 	for _, wrapper := range requester.wrappers {
 		requester.connection = wrapper.Wrap(requester.connection)

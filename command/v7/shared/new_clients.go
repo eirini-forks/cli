@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"code.cloudfoundry.org/cli/actor/v7action"
 	"code.cloudfoundry.org/cli/api/cloudcontroller/ccv3"
 	ccWrapper "code.cloudfoundry.org/cli/api/cloudcontroller/wrapper"
 	"code.cloudfoundry.org/cli/api/router"
@@ -62,10 +61,7 @@ func NewAuthWrappedCloudControllerClient(config command.Config, ui command.UI, u
 	var authWrapper ccv3.ConnectionWrapper
 	authWrapper = ccWrapper.NewUAAAuthentication(uaaClient, config)
 	if config.IsCFOnK8s() {
-		authWrapper = ccWrapper.NewKubernetesAuthentication(
-			config,
-			v7action.NewDefaultKubernetesConfigGetter(),
-		)
+		return NewWrappedCloudControllerClient(config, ui)
 	}
 
 	return NewWrappedCloudControllerClient(config, ui, authWrapper)
@@ -135,10 +131,16 @@ func connectToCF(config command.Config, ui command.UI, ccClient *ccv3.Client, mi
 		}
 	}
 
+	authInfo, err := config.CurrentUserName()
+	if err != nil {
+		return nil, err
+	}
+
 	ccClient.TargetCF(ccv3.TargetSettings{
 		URL:               config.Target(),
 		SkipSSLValidation: config.SkipSSLValidation(),
 		DialTimeout:       config.DialTimeout(),
+		AuthInfo:          authInfo,
 	})
 
 	if minVersionV3 != "" {

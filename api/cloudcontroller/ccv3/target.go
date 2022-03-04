@@ -22,6 +22,10 @@ type TargetSettings struct {
 
 	// URL is a fully qualified URL to the Cloud Controller API.
 	URL string
+
+	// AuthInfo is the selected entry from the kubeconfig users
+	// set after cf login to a cf-on-k8s cluster
+	AuthInfo string
 }
 
 // TargetCF sets the client to use the Cloud Controller specified in the

@@ -11,6 +11,9 @@ import (
 
 	"code.cloudfoundry.org/cli/api/cloudcontroller/ccerror"
 	"code.cloudfoundry.org/cli/util"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 // Config is for configuring a CloudControllerConnection.
@@ -26,8 +29,6 @@ type CloudControllerConnection struct {
 	UserAgent  string
 }
 
-// NewConnection returns a new CloudControllerConnection with provided
-// configuration.
 func NewConnection(config Config) *CloudControllerConnection {
 	tr := &http.Transport{
 		TLSClientConfig: util.NewTLSConfig(nil, config.SkipSSLValidation),
@@ -40,6 +41,39 @@ func NewConnection(config Config) *CloudControllerConnection {
 
 	return &CloudControllerConnection{
 		HTTPClient: &http.Client{Transport: tr},
+	}
+}
+
+// NewConnection returns a new CloudControllerConnection with provided
+// configuration.
+func NewK8sConnection(config Config, authInfo string) *CloudControllerConnection {
+	pathOpts := clientcmd.NewDefaultPathOptions()
+	k8sConfig, err := pathOpts.GetStartingConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	restConfig, err := clientcmd.NewDefaultClientConfig(
+		*k8sConfig,
+		&clientcmd.ConfigOverrides{
+			Context: api.Context{AuthInfo: authInfo},
+		}).ClientConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	restConfig.Insecure = config.SkipSSLValidation
+	restConfig.Timeout = config.DialTimeout
+	restConfig.CAData = nil
+	restConfig.CAFile = ""
+
+	transport, err := rest.TransportFor(restConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	return &CloudControllerConnection{
+		HTTPClient: &http.Client{Transport: transport},
 	}
 }
 
