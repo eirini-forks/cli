@@ -5,14 +5,15 @@ import (
 	"os"
 	"path/filepath"
 
-	"code.cloudfoundry.org/cli/integration/helpers"
-	"code.cloudfoundry.org/cli/integration/v7/selfcontained/fake"
-	"code.cloudfoundry.org/cli/util/configv3"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	apiv1 "k8s.io/client-go/tools/clientcmd/api/v1"
+
+	"code.cloudfoundry.org/cli/integration/helpers"
+	"code.cloudfoundry.org/cli/integration/v7/selfcontained/fake"
+	"code.cloudfoundry.org/cli/util/configv3"
 )
 
 var _ = Describe("Create Space Command", func() {
@@ -39,7 +40,7 @@ var _ = Describe("Create Space Command", func() {
 					"POST /v3/roles":  {Code: http.StatusCreated},
 					"GET /whoami": {
 						Code: http.StatusOK, Body: map[string]interface{}{
-							"name": "my-user",
+							"name": fake.DefaultUsername,
 							"kind": "User",
 						},
 					},
@@ -100,8 +101,8 @@ var _ = Describe("Create Space Command", func() {
 		It("creates a role using the name from the /whoami endpoint", func() {
 			Eventually(session).Should(gexec.Exit(0))
 
-			Expect(session).To(gbytes.Say("Assigning role SpaceManager to user my-user in org my-org"))
-			Expect(session).To(gbytes.Say("Assigning role SpaceDeveloper to user my-user in org my-org"))
+			Expect(session).To(gbytes.Say("Assigning role SpaceManager to user %s in org my-org", fake.DefaultUsername))
+			Expect(session).To(gbytes.Say("Assigning role SpaceDeveloper to user %s in org my-org", fake.DefaultUsername))
 		})
 	})
 })

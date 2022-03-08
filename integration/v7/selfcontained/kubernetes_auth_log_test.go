@@ -4,18 +4,20 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"code.cloudfoundry.org/cli/resources"
+
+	"code.cloudfoundry.org/cli/integration/helpers"
+	"code.cloudfoundry.org/cli/integration/v7/selfcontained/fake"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	apiv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 
-	"code.cloudfoundry.org/cli/integration/helpers"
-	"code.cloudfoundry.org/cli/integration/v7/selfcontained/fake"
-	"code.cloudfoundry.org/cli/resources"
 	"code.cloudfoundry.org/cli/util/configv3"
 )
 
-var _ = Describe("auth-provider", func() {
+var _ = FDescribe("logclient auth-provider", func() {
 	var (
 		apiConfig  fake.CFAPIConfig
 		kubeConfig apiv1.Config
@@ -24,10 +26,27 @@ var _ = Describe("auth-provider", func() {
 	BeforeEach(func() {
 		apiConfig = fake.CFAPIConfig{
 			Routes: map[string]fake.Response{
+				"GET /api/v1/read/": { // TODO: why no guid?
+					Code: http.StatusOK, Body: map[string]interface{}{
+						"envelopes": map[string]interface{}{
+							"batch": []string{},
+						},
+					},
+				},
+				"GET /api/v1/info": {
+					Code: http.StatusOK, Body: map[string]interface{}{
+						"version":   "42.1.2",
+						"vm_uptime": "0",
+					},
+				},
 				"GET /v3/apps": {
 					Code: http.StatusOK, Body: map[string]interface{}{
 						"pagination": map[string]interface{}{},
-						"resources":  []resources.Application{},
+						"resources": []resources.Application{
+							{
+								GUID: "test-guid",
+							},
+						},
 					},
 				},
 			},
@@ -35,6 +54,7 @@ var _ = Describe("auth-provider", func() {
 		apiServer.SetConfiguration(apiConfig)
 		helpers.SetConfig(func(config *configv3.Config) {
 			config.ConfigFile.Target = apiServer.URL()
+			config.ConfigFile.LogCacheEndpoint = apiServer.URL()
 			config.ConfigFile.CFOnK8s.Enabled = true
 			config.ConfigFile.CFOnK8s.AuthInfo = fake.DefaultUsername
 			config.ConfigFile.TargetedOrganization = configv3.Organization{
@@ -97,11 +117,11 @@ var _ = Describe("auth-provider", func() {
 	})
 
 	JustBeforeEach(func() {
-		Eventually(helpers.CustomCF(env, "apps")).Should(gexec.Exit(0))
+		Eventually(helpers.CustomCF(env, "logs", "--recent", "my-test-app")).Should(gexec.Exit(0))
 	})
 
 	It("sends the Bearer token in the Authorization header", func() {
-		reqs := apiServer.ReceivedRequests()["GET /v3/apps"]
+		reqs := apiServer.ReceivedRequests()["GET /api/v1/read/"] // TODO: why no guid?
 		Expect(reqs).To(HaveLen(1))
 		Expect(reqs[0].Header).To(HaveKeyWithValue("Authorization", ConsistOf("Bearer "+string(token))))
 	})

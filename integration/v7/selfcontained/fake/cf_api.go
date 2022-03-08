@@ -10,6 +10,8 @@ import (
 	"github.com/onsi/gomega/ghttp"
 )
 
+const DefaultUsername = "my-user"
+
 type CFAPI struct {
 	server *ghttp.Server
 }
@@ -32,6 +34,16 @@ func NewCFAPI() *CFAPI {
 
 func (a *CFAPI) SetConfiguration(config CFAPIConfig) {
 	a.server.Reset()
+
+	_, exists := config.Routes["GET /whoami"]
+	if !exists {
+		config.Routes["GET /whoami"] = Response{
+			Code: http.StatusOK, Body: map[string]interface{}{
+				"name": DefaultUsername,
+				"kind": "User",
+			},
+		}
+	}
 
 	for request, response := range config.Routes {
 		method, path := parseRequest(request)
